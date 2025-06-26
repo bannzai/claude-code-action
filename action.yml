@@ -1,5 +1,5 @@
-name: "Claude Max Code Action (OAuth Fork)"
-description: "Fork of Claude Code Action that supports OAuth authentication for Claude Max subscribers."
+name: "Claude Code Action with OAuth"
+description: "Enhanced Claude Code Action supporting authentication for Claude Pro / Max subscribers without API keys."
 branding:
   icon: "at-sign"
   color: "orange"
@@ -77,7 +77,15 @@ inputs:
     description: "Claude AI OAuth token expiration timestamp (required when use_oauth is true)"
     required: false
     default: ""
+  secrets_admin_pat:
+    description: 'Personal Access Token with secrets:write permission to refresh OAuth tokens (required when use_oauth is true)'
+    required: false
+    default: ''
 
+  max_turns:
+    description: "Maximum number of conversation turns"
+    required: false
+    default: ""
   timeout_minutes:
     description: "Timeout in minutes for execution"
     required: false
@@ -112,6 +120,7 @@ runs:
         ASSIGNEE_TRIGGER: ${{ inputs.assignee_trigger }}
         BASE_BRANCH: ${{ inputs.base_branch }}
         ALLOWED_TOOLS: ${{ inputs.allowed_tools }}
+        DISALLOWED_TOOLS: ${{ inputs.disallowed_tools }}
         CUSTOM_INSTRUCTIONS: ${{ inputs.custom_instructions }}
         DIRECT_PROMPT: ${{ inputs.direct_prompt }}
         MCP_CONFIG: ${{ inputs.mcp_config }}
@@ -121,12 +130,13 @@ runs:
     - name: Run Claude Code
       id: claude-code
       if: steps.prepare.outputs.contains_trigger == 'true'
-      uses: grll/claude-code-base-action@9f0fa5eeca1de34e9be1acf05f244e22e4527ca7 # Latest commit from fork
+      uses: grll/claude-code-base-action@2a39af4aa64ec9820abb60cf4dea094225e84e48 # Latest commit from fork with critical fix
       with:
         prompt_file: ${{ runner.temp }}/claude-prompts/claude-prompt.txt
         allowed_tools: ${{ env.ALLOWED_TOOLS }}
         disallowed_tools: ${{ env.DISALLOWED_TOOLS }}
         timeout_minutes: ${{ inputs.timeout_minutes }}
+        max_turns: ${{ inputs.max_turns }}
         model: ${{ inputs.model || inputs.anthropic_model }}
         mcp_config: ${{ steps.prepare.outputs.mcp_config }}
         use_bedrock: ${{ inputs.use_bedrock }}
@@ -136,6 +146,7 @@ runs:
         claude_access_token: ${{ inputs.claude_access_token }}
         claude_refresh_token: ${{ inputs.claude_refresh_token }}
         claude_expires_at: ${{ inputs.claude_expires_at }}
+        secrets_admin_pat: ${{ inputs.secrets_admin_pat }}
         claude_env: ${{ inputs.claude_env }}
       env:
         # Model configuration
